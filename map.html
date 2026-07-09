@@ -3,92 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מפת נוקדים המותאמת שלי</title>
+    <title>מפת נוקדים בתלת מימד</title>
     
-    <!-- טעינת העיצוב והקוד של ספריית Leaflet -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- טעינת הספרייה והעיצוב של Cesium לגרפיקה תלת ממדית -->
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 
     <style>
-        body, html {
+        body, html, #cesiumContainer {
             margin: 0;
             padding: 0;
             height: 100%;
             width: 100%;
-        }
-        #map {
-            height: 100%;
-            width: 100%;
-        }
-        /* עיצוב פשוט לסימון המיקום של ה-GPS */
-        .gps-marker {
-            background-color: #007bff;
-            border: 2px solid white;
-            border-radius: 50%;
-            width: 12px;
-            height: 12px;
-            box-shadow: 0 0 10px rgba(0,123,255,0.6);
+            overflow: hidden;
+            background-color: #000;
         }
     </style>
 </head>
 <body>
 
-    <div id="map"></div>
+    <div id="cesiumContainer"></div>
 
     <script>
-        // 1. יצירת המפה ומיקומה הראשוני בנוקדים
-        const map = L.map('map').setView([31.6461, 35.2468], 16);
-
-        // 2. שכבת רקע של מפה (OpenStreetMap)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-
-        // 3. הגדרת גבולות התמונה המדויקים על פי הנתונים שלך (לאחר המרה לעשרוני)
-        // המבנה: [[South, West], [North, East]]
-        const latLngBounds = L.latLngBounds([
-            [31.640908, 35.241278], // פינה דרום-מערבית
-            [31.651078, 35.252514]  // פינה צפון-מזרחית
-        ]);
-
-        // 4. הקישור הישיר לתמונת המפה שלך
-        const imageUrl = 'https://r.is-cool.dev/nokdim/image.png';
-
-        // 5. הלבשת התמונה על המפה (שקיפות מוגדרת ל-85% כדי שיהיה נוח לראות את הרקע)
-        const imageOverlay = L.imageOverlay(imageUrl, latLngBounds, {
-            opacity: 0.85,
-            interactive: true
-        }).addTo(map);
-
-        // התאמת תצוגת המפה באופן אוטומטי לגבולות המפה שלך
-        map.fitBounds(latLngBounds);
-
-        // ==========================================
-        // מנגנון GPS מובנה (מעולה לשימוש בשטח מהנייד)
-        // ==========================================
-        let userMarker;
-
-        // הפעלת מעקב מיקום רציף
-        map.locate({ watch: true, enableHighAccuracy: true });
-
-        // פונקציה שמופעלת בכל פעם שה-GPS מתעדכן
-        map.on('locationfound', function(e) {
-            const radius = e.accuracy;
-
-            // אם הסמן כבר קיים, רק נעדכן את המיקום שלו
-            if (userMarker) {
-                userMarker.setLatLng(e.latlng);
-            } else {
-                // יצירת סמן כחול חדש למיקום המשתמש
-                const gpsIcon = L.divIcon({ className: 'gps-marker' });
-                userMarker = L.marker(e.latlng, { icon: gpsIcon }).addTo(map);
-                userMarker.bindPopup("אתה נמצא כאן (דיוק: " + Math.round(radius) + " מטרים)").openPopup();
-            }
+        // 1. אתחול הגלובוס התלת-ממדי עם מפת לוויין כברירת מחדל
+        const viewer = new Cesium.Viewer('cesiumContainer', {
+            terrainProvider: Cesium.createWorldTerrain(), // טעינת טופוגרפיה והרים בתלת מימד
+            baseLayerPicker: false, // ביטול כפתור החלפת שכבות מיותר
+            imageryProvider: new Cesium.IonImageryProvider({ assetId: 2 }), // מפת לוויין איכותית של Bing
+            timeline: false, // הסרת סרגל הזמן למטה
+            animation: false, // הסרת כפתורי האנימציה
+            navigationHelpButton: false, // הסרת כפתור העזרה
+            sceneModePicker: false // נעילה על מצב תלת מימד בלבד
         });
 
-        // טיפול במקרה של שגיאת GPS (למשל אם המשתמש סירב לשתף מיקום)
-        map.on('locationerror', function(e) {
-            console.log("לא ניתן לגשת למיקום ה-GPS: " + e.message);
+        // 2. הגדרת גבולות התמונה המדויקים שנתת (המרנו אותם לרדיאנים עבור המנוע התלת ממדי)
+        const south = 31.640908;
+        const west = 35.241278;
+        const north = 31.651078;
+        const east = 35.252514;
+
+        const rectangle = Cesium.Rectangle.fromDegrees(west, south, east, north);
+
+        // 3. הלבשת התמונה שלך כשכבה על גבי הלוויין והטופוגרפיה התלת ממדית
+        const updatedImageUrl = 'https://r.is-cool.dev/nokdim/image.png';
+
+        viewer.imageryLayers.addImageryProvider(new Cesium.SingleTileImageryProvider({
+            url: updatedImageUrl,
+            rectangle: rectangle
+        }));
+
+        // 4. מיקוד המצלמה אוטומטית מעל נוקדים בזווית תלת-ממדית מוטה (Pitch)
+        viewer.camera.flyTo({
+            destination: Cesium.Cartesian3.fromDegrees(35.2468, 31.6420, 1200.0), // מיקום וגובה המצלמה במטרים
+            orientation: {
+                heading: Cesium.Math.toRadians(0.0), // כיוון צפון
+                pitch: Cesium.Math.toRadians(-35.0), // זווית הטיה למטה (מבט אל האופק התלת ממדי)
+                roll: 0.0
+            }
         });
     </script>
 </body>
