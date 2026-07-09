@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מפת נוקדים בתלת מימד</title>
+    <title>מפת נוקדים בתלת מימד - GitHub Pages</title>
     
     <!-- טעינת הספרייה והעיצוב של Cesium לגרפיקה תלת ממדית -->
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
@@ -25,18 +25,20 @@
     <div id="cesiumContainer"></div>
 
     <script>
-        // 1. אתחול הגלובוס התלת-ממדי עם מפת לוויין כברירת מחדל
+        // 1. אתחול הגלובוס עם מפת לוויין פתוחה של Esri (לא דורשת מפתח גישה)
         const viewer = new Cesium.Viewer('cesiumContainer', {
-            terrainProvider: Cesium.createWorldTerrain(), // טעינת טופוגרפיה והרים בתלת מימד
-            baseLayerPicker: false, // ביטול כפתור החלפת שכבות מיותר
-            imageryProvider: new Cesium.IonImageryProvider({ assetId: 2 }), // מפת לוויין איכותית של Bing
-            timeline: false, // הסרת סרגל הזמן למטה
-            animation: false, // הסרת כפתורי האנימציה
-            navigationHelpButton: false, // הסרת כפתור העזרה
-            sceneModePicker: false // נעילה על מצב תלת מימד בלבד
+            terrainProvider: Cesium.createWorldTerrain(), // הפעלת טופוגרפיה והרים בתלת מימד
+            baseLayerPicker: false,
+            imageryProvider: new Cesium.ArcGisMapServerImageryProvider({
+                url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer'
+            }),
+            timeline: false,
+            animation: false,
+            navigationHelpButton: false,
+            sceneModePicker: false
         });
 
-        // 2. הגדרת גבולות התמונה המדויקים שנתת (המרנו אותם לרדיאנים עבור המנוע התלת ממדי)
+        // 2. הגדרת גבולות התמונה המדויקים על פי נתוני ה-KML שלך בנוקדים
         const south = 31.640908;
         const west = 35.241278;
         const north = 31.651078;
@@ -44,20 +46,20 @@
 
         const rectangle = Cesium.Rectangle.fromDegrees(west, south, east, north);
 
-        // 3. הלבשת התמונה שלך כשכבה על גבי הלוויין והטופוגרפיה התלת ממדית
-        const updatedImageUrl = 'https://r.is-cool.dev/nokdim/image.png';
+        // 3. טעינת התמונה מנתיב יחסי - מאחר והיא נמצאת באותה תיקייה בדיוק של ה-html
+        const localImageUrl = './image.png';
 
         viewer.imageryLayers.addImageryProvider(new Cesium.SingleTileImageryProvider({
-            url: updatedImageUrl,
+            url: localImageUrl,
             rectangle: rectangle
         }));
 
-        // 4. מיקוד המצלמה אוטומטית מעל נוקדים בזווית תלת-ממדית מוטה (Pitch)
+        // 4. מיקוד אוטומטי של המצלמה מעל נוקדים בזווית תלת-ממדית מוטה
         viewer.camera.flyTo({
-            destination: Cesium.Cartesian3.fromDegrees(35.2468, 31.6420, 1200.0), // מיקום וגובה המצלמה במטרים
+            destination: Cesium.Cartesian3.fromDegrees(35.2468, 31.6420, 1500.0), // מיקום וגובה המצלמה במטרים
             orientation: {
-                heading: Cesium.Math.toRadians(0.0), // כיוון צפון
-                pitch: Cesium.Math.toRadians(-35.0), // זווית הטיה למטה (מבט אל האופק התלת ממדי)
+                heading: Cesium.Math.toRadians(0.0),  // מבט פונה לצפון
+                pitch: Cesium.Math.toRadians(-40.0),  // זווית הטיה ב-40 מעלות כדי לראות את התלת מימד
                 roll: 0.0
             }
         });
