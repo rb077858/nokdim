@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>מפת נוקדים בתלת מימד - GitHub Pages</title>
+    <title>מפת נוקדים בתלת מימד מלא - GitHub Pages</title>
     
-    <!-- טעינת הספרייה והעיצוב של Cesium לגרפיקה תלת ממדית -->
+    <!-- טעינת הספרייה והעיצוב של Cesium -->
     <script src="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Cesium.js"></script>
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.115/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 
@@ -25,18 +25,19 @@
     <div id="cesiumContainer"></div>
 
     <script>
-        // הארכיטקטורה החדשה של Cesium דורשת יצירה אסינכרונית של תוואי שטח
+        // הדבק כאן את הטוקן שהעתקת מהאתר של Cesium
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiIzMjJhMTIxYi04NWJhLTQ4MmItYjI4OC1lZDYwMDllNjk0ZjYiLCJpZCI6NDU0NTc4LCJpc3MiOiJodHRwczovL2FwaS5jZXNpdW0uY29tIiwiYXVkIjoidW5kZWZpbmVkX2RlZmF1bHQiLCJpYXQiOjE3ODM2MTk2OTN9._owBzhmiRr6Vwus-2g2IHYVCrliPugLuG_pD0uZGkVg';
+
         async function initMap() {
-            
-            // 1. יצירת תוואי השטח (ההרים והגבעות) בשיטה המודרנית
             let terrainProvider;
             try {
+                // עכשיו כשיש טוקן, בקשת השטח התלת-ממדי תאושר בהצלחה!
                 terrainProvider = await Cesium.createWorldTerrainAsync();
             } catch (error) {
-                console.log("לא ניתן היה לטעון את תוואי השטח של Cesium, ממשיך ללא תלת מימד: ", error);
+                console.log("שגיאה בטעינת תוואי השטח: ", error);
             }
 
-            // 2. אתחול הגלובוס עם מפת לוויין פתוחה של Esri ותוואי השטח החדש
+            // אתחול הגלובוס עם מפת לוויין ותוואי השטח התלת-ממדי
             const viewer = new Cesium.Viewer('cesiumContainer', {
                 terrainProvider: terrainProvider, 
                 baseLayerPicker: false,
@@ -49,34 +50,32 @@
                 sceneModePicker: false
             });
 
-            // 3. הגדרת גבולות התמונה המדויקים שלך בנוקדים
+            // גבולות המפה שלך בנוקדים
             const south = 31.640908;
             const west = 35.241278;
             const north = 31.651078;
             const east = 35.252514;
 
             const rectangle = Cesium.Rectangle.fromDegrees(west, south, east, north);
-
-            // 4. טעינת התמונה מהתיקייה המקומית בתוך nokdim
             const localImageUrl = './image.png';
 
+            // הלבשת המפה שלך
             viewer.imageryLayers.addImageryProvider(new Cesium.SingleTileImageryProvider({
                 url: localImageUrl,
                 rectangle: rectangle
             }));
 
-            // 5. מיקוד אוטומטי של המצלמה מעל נוקדים בזווית תלת-ממדית מוטה
+            // מיקוד המצלמה בזווית תלת-ממדית מוטה (מבט אל עבר האופק וההרים)
             viewer.camera.flyTo({
-                destination: Cesium.Cartesian3.fromDegrees(35.2468, 31.6420, 1500.0), // מיקום וגובה המצלמה במטרים
+                destination: Cesium.Cartesian3.fromDegrees(35.2468, 31.6390, 1000.0), // מיקום נמוך וקרוב יותר
                 orientation: {
-                    heading: Cesium.Math.toRadians(0.0),  // מבט פונה לצפון
-                    pitch: Cesium.Math.toRadians(-40.0),  // זווית הטיה ב-40 מעלות
+                    heading: Cesium.Math.toRadians(0.0),   // מבט פונה לצפון
+                    pitch: Cesium.Math.toRadians(-30.0),  // זווית הטיה חדה יותר כדי לראות את ההרים בבירור
                     roll: 0.0
                 }
             });
         }
 
-        // הפעלת הפונקציה מיד עם טעינת הדף
         initMap();
     </script>
 </body>
